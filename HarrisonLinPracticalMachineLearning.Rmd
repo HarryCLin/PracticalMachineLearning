@@ -1,0 +1,168 @@
+---
+title: "Practical Machine Learning:  Prediction Assignment"
+author: "Harrison Lin"
+date: "February 7, 2016"
+output: html_document
+---
+
+##Background
+
+The goal of this project is to predict the classe variable in the training set.  This assignment shows how we can build our model, using various methods in the practical machine learning course.  The models introduced includes Classification trees, Bagging, Random Forest and Boosting.  Here in this assignment, we explore these models and select the best performing one.
+
+
+## Preprocessing:
+```{r}
+  library(forecast)
+  library(caret)
+  library(ggplot2)
+  
+  data.Path <- "D:/Cloud/Google Drive/Coursera/Practical Machine Learning/Project/"
+  
+  data.file.training <- paste(data.Path, "pml-training.csv", sep='')
+  data.file.testing <- paste(data.Path, "pml-testing.csv", sep='')
+  
+    # training data
+  data.training = read.csv(data.file.training)
+
+  # testing data
+  data.testing = read.csv(data.file.testing)
+```
+
+### Belt Variables
+
+Here we build a feature plot between the dependent variable, classe against the variables,
+roll_belt, pitch_belt, and yaw_belt
+
+```{r}
+  
+  featurePlot(x=data.training[, c("roll_belt", "pitch_belt", "yaw_belt", "classe")],
+              y=data.training[,c("classe")], plot="pairs")
+```
+
+#### Result:
+The dependent variable, classe, on the belt variables,
+	Roll_belt,
+	Pitch_belt,
+	Yaw_belt
+are correlated.
+
+
+### Arm Variables
+
+Here we build a feature plot between the dependent variable, classe against the variables,
+roll_arm, pitch_arm, and yaw_arm
+
+```{r}
+  featurePlot(x=data.training[, c("roll_arm", "pitch_arm", "yaw_arm", "classe")],
+              y=data.training$classe, plot="pairs")
+```
+
+#### Result:
+This shows the various Arm variables, roll_arm, pitch_arm and yaw_arm variables are not correlated with our dependent variables in classe.
+
+
+### Dumbbell Variables:
+
+There are four sets of variables, on the third set of variables, we build a feature plot between the dependent variable, classe against the variables,
+roll_dumbbell, pitch_dumbbell, and yaw_dumbbell.
+
+```{r}
+  featurePlot(x=data.training[, c("roll_dumbbell", "pitch_dumbbell", "yaw_dumbbell", "classe")],
+              y=data.training$classe, plot="pairs")
+```
+
+#### Result:
+Dumbbell variables, roll_dumbbell, pitch_dumbbell and yaw_dumbbell have no significant correlation to our dependent variables in classe.
+
+### Forearm Variables
+
+Finally, on the last set of variables, we build a feature plot between the dependent variable, classe against the variables,
+roll_forearm, pitch_forearm, and yaw_forearm.
+
+```{r}
+  featurePlot(x=data.training[, c("roll_forearm", "pitch_forearm", "yaw_forearm", "classe")], y=data.training$classe, plot="pairs")
+```
+  
+#### Result:
+Hence forearm variables, roll_forearm, pitch_forearm, and yaw_forearm has no significant correlation to classe variable.  Some exceptions are observed, such as Roll_forearm variable shows some clustering effects and pitch_forearm shows no data in lower end spectrum.
+
+
+
+
+## Prediction Models
+
+We first set the seed:
+```{r}
+  set.seed(1234)
+```
+  
+### Classification Trees:
+We first explore the possibility to train a classification tree for the three variables we found correlated with the dependent variable, classe.  The three variables belongs to the belt exercises, they are roll_belt, pitch_belt and yaw_belt.
+
+```{r}
+  model.tree.fit <- train(classe ~ roll_belt + pitch_belt + yaw_belt, data=data.training, method="rpart")
+  print(model.tree.fit$finalModel)
+  model.tree.fit$results
+  
+  plot(model.tree.fit$finalModel, uniform=TRUE, main="Classification Tree")
+  text(model.tree.fit$finalModel, use.n=TRUE, all=TRUE, cex=0.8)
+  
+  predict(model.tree.fit, newdata=data.testing)  
+  
+```
+
+#### Results:
+The classification tree produced accuracy less than 0.47.
+
+### Random Forest:
+
+We then train a Random Forest model for the three variables we found correlated with the dependent variable, classe.  The three variables belongs to the belt exercises, they are roll_belt, pitch_belt and yaw_belt.  We find other set of variables, including arm, forearm and dumbbell insignificantly correlated with our dependent variable, classe, and not included in our analysis for keeping the model arsimonious.
+
+```{r}
+model.randomForest.fit <- train(classe ~ roll_belt + pitch_belt + yaw_belt, data=data.training, method="rf")
+
+print(model.randomForest.fit)
+
+  
+model.randomForest.predict <- predict(model.randomForest.fit, data.testing)
+print(model.randomForest.predict)
+```
+
+#### Result:
+Among the Classification trees and the Random Forest, the Random Forest model performs better in the training set with accuracy close to 0.85 while the classification tree only achieved accuracy less than 0.47.
+
+
+### Boosting:
+
+Finally, We train a stochastic Boosting model for the three variables we found correlated with the dependent variable, classe.  The three variables belongs to the belt exercises, they are roll_belt, pitch_belt and yaw_belt.  
+
+These models are trained with identical set of covariates, enabling us to figure out the best performing models among the three choices in classification trees, random forest and boosting.  We find other set of variables, including arm, forearm and dumbbell insignificantly correlated with our dependent variable, classe, and not included in our models.
+
+```{r}
+model.boosting.fit <- train(classe ~ roll_belt + pitch_belt + yaw_belt, data=data.training, method="gbm", verbose=FALSE)
+  print(model.boosting.fit)
+  print(model.boosting.fit$results)
+  
+```
+
+#### Results:
+
+The Boosting model has accuracy between 0.51 and 0.75.
+
+The prediction produced results:
+```{r}
+  model.boosting.predict <- predict(model.boosting.fit, data.testing)
+  print(model.boosting.predict)
+  
+```
+
+
+
+
+## Conclusion
+
+Comparing the three methods between Classification Trees, Random Forest and Boosting, it appears Random Forest performs the best in the training dataset with Accuracy close to 0.85, with Boosting the second in performance, having Accuracy between 0.51 and 0.75.
+The Classification Trees has the worst performance in training dataset, with Accuracy less than 0.47.
+
+Hence we can conclude that the random forest model is selected to be among the better prediction algorithms selected for this activity training dataset.
+

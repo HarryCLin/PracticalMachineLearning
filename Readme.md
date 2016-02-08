@@ -1,1 +1,5 @@
-# Practical Machine Learning : Harrison Lin
+# Practical Machine Learning
+Readme file
+
+
+Harrison Lin
